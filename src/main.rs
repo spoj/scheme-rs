@@ -8,7 +8,7 @@ enum Sexp {
 #[allow(unused)]
 #[derive(Debug)]
 enum Atom {
-    Number(usize),
+    Number(isize),
     Symbol(String),
 }
 
@@ -51,10 +51,11 @@ impl<'a> Parser<'a> {
         let end = self.cursor;
         &self.inner[start..end]
     }
-    fn parse_number(&mut self) -> Option<usize> {
+    fn parse_number(&mut self) -> Option<isize> {
+        let neg = self.consume_if(|s| s == "-").is_some();
         let num = self.take_while(|s| s.chars().next().is_some_and(|c| c.is_ascii_digit()));
-        let num = num.parse().ok()?;
-        Some(num)
+        let num: isize = num.parse().ok()?;
+        if neg { Some(-num) } else { Some(num) }
     }
     fn parse_symbol(&mut self) -> Option<String> {
         let name = self.take_while(|s| s.chars().next().is_some_and(|c| c.is_ascii_alphanumeric()));
@@ -92,7 +93,7 @@ impl<'a> Parser<'a> {
 }
 
 fn main() {
-    let input = "(3 (23 34) 5 ()) ";
+    let input = "(-3 (2 -3 -34 3a) 5 ()) ";
     let mut parser = Parser::new(input);
     dbg!(parser.parse_sexp());
 }
