@@ -1,7 +1,13 @@
 #[derive(Debug)]
 enum Sexp {
-    Number(usize),
+    Atom(Atom),
     List(Vec<Sexp>),
+}
+
+#[derive(Debug)]
+enum Atom {
+    Number(usize),
+    Symbol(String),
 }
 
 struct Parser<'a> {
@@ -48,6 +54,10 @@ impl<'a> Parser<'a> {
         let num = num.parse().ok()?;
         Some(num)
     }
+    fn parse_symbol(&mut self) -> Option<String> {
+        let name = self.take_while(|s| s.chars().next().is_some_and(|c| c.is_ascii_alphanumeric()));
+        (!name.is_empty()).then_some(name.to_string())
+    }
     fn consume_spaces(&mut self) {
         while self.consume_if(|s| s == " ").is_some() {}
     }
@@ -70,15 +80,17 @@ impl<'a> Parser<'a> {
             _ => None,
         }
     }
+    fn parse_atom(&mut self) -> Option<Sexp> {
+        None.or_else(|| self.parse_number().map(|n| Sexp::Atom(Atom::Number(n))))
+            .or_else(|| self.parse_symbol().map(|n| Sexp::Atom(Atom::Symbol(n))))
+    }
     fn parse_sexp(&mut self) -> Option<Sexp> {
-        self.parse_number()
-            .map(Sexp::Number)
-            .or_else(|| self.parse_list())
+        self.parse_atom().or_else(|| self.parse_list())
     }
 }
 
 fn main() {
-    let input = "(1 2 (1 2 3))";
+    let input = "(3 (23 34) 5 ()) ";
     let mut parser = Parser::new(input);
     dbg!(parser.parse_sexp());
 }
