@@ -1,9 +1,11 @@
+#[allow(unused)]
 #[derive(Debug)]
 enum Sexp {
     Atom(Atom),
     List(Vec<Sexp>),
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 enum Atom {
     Number(usize),
