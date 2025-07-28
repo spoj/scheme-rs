@@ -34,14 +34,6 @@ impl<'a> Parser<'a> {
             None
         }
     }
-    fn parse_number(&mut self) -> Option<Sexp> {
-        if let Ok(num) = self.inner[self.cursor..self.cursor + 1].parse::<usize>() {
-            self.cursor += 1;
-            Some(Sexp::Number(num))
-        } else {
-            None
-        }
-    }
     fn take_while<P>(&mut self, pred: P) -> &'a str
     where
         P: Fn(&'a str) -> bool,
@@ -50,6 +42,11 @@ impl<'a> Parser<'a> {
         while self.consume_if(&pred).is_some() {}
         let end = self.cursor;
         &self.inner[start..end]
+    }
+    fn parse_number(&mut self) -> Option<usize> {
+        let num = self.take_while(|s| s.chars().next().is_some_and(|c| c.is_ascii_digit()));
+        let num = num.parse().ok()?;
+        Some(num)
     }
     fn consume_spaces(&mut self) {
         while self.consume_if(|s| s == " ").is_some() {}
@@ -74,7 +71,9 @@ impl<'a> Parser<'a> {
         }
     }
     fn parse_sexp(&mut self) -> Option<Sexp> {
-        self.parse_number().or_else(|| self.parse_list())
+        self.parse_number()
+            .map(Sexp::Number)
+            .or_else(|| self.parse_list())
     }
 }
 
