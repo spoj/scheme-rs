@@ -42,6 +42,15 @@ impl<'a> Parser<'a> {
             None
         }
     }
+    fn take_while<P>(&mut self, pred: P) -> &'a str
+    where
+        P: Fn(&'a str) -> bool,
+    {
+        let start = self.cursor;
+        while self.consume_if(&pred).is_some() {}
+        let end = self.cursor;
+        &self.inner[start..end]
+    }
     fn consume_spaces(&mut self) {
         while self.consume_if(|s| s == " ").is_some() {}
     }
