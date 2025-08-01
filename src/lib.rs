@@ -52,7 +52,7 @@ impl Sexp {
 }
 
 impl Sexp {
-    pub fn eval(&self, env: HashMap<String, Value>) -> Option<Value> {
+    pub fn eval(&self, env: &HashMap<String, Value>) -> Option<Value> {
         match self {
             Sexp::Atom(Atom::Number(n)) => Some(Value::Number(*n)),
             Sexp::Atom(Atom::Symbol(n)) => env.get(n).cloned(),
@@ -66,7 +66,7 @@ impl Sexp {
             {
                 let res: isize = sexps[1..]
                     .iter()
-                    .flat_map(|s| s.as_atom().and_then(|a| a.as_number()))
+                    .flat_map(|s| s.eval(env).and_then(|a| a.as_number()))
                     .sum();
                 Some(Value::Number(res))
             }
@@ -103,13 +103,21 @@ pub enum Value {
     Number(isize),
 }
 
+impl Value {
+    fn as_number(&self) -> Option<isize> {
+        match self {
+            Value::Number(n) => Some(*n),
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
     #[test]
     fn test_add() {
         let input = "(add 1 2 3 4 5 6)";
-        let result = sexp(input).unwrap().1.eval(Default::default());
+        let result = sexp(input).unwrap().1.eval(&Default::default());
         assert_eq!(result, Some(Value::Number(21)));
     }
 }
