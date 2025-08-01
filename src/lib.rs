@@ -109,9 +109,24 @@ impl Value {
 mod test {
     use super::*;
     #[test]
-    fn test_add() {
+    fn test_simple_add() {
         let input = "(add 1 2 3 4 5 6)";
         let result = sexp(input).unwrap().1.eval(&Default::default());
         assert_eq!(result, Some(Value::Number(21)));
+    }
+    #[test]
+    fn test_complex_add() {
+        let input = "(add (add 4 5 6) 1 2 3)";
+        let result = sexp(input).unwrap().1.eval(&Default::default());
+        assert_eq!(result, Some(Value::Number(21)));
+    }
+    #[test]
+    fn test_env() {
+        let input = "(add (add a a a) 1 2 3)";
+        let result = sexp(input)
+            .unwrap()
+            .1
+            .eval(&HashMap::from([("a".to_owned(), Value::Number(1))]));
+        assert_eq!(result, Some(Value::Number(9)));
     }
 }
