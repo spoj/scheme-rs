@@ -98,16 +98,18 @@ impl Atom {
 }
 
 #[allow(unused)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Number(isize),
 }
 
-fn main() {
-    let input = "(3 (2 3 -34 3) +5 ()) ";
-    let _ = dbg!(sexp(input));
-    let input = "(add 1 2 3 4 5 6)";
-    let _ = dbg!(sexp(input));
-    let result = sexp(input).unwrap().1.eval(Default::default());
-    dbg!(result);
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_add() {
+        let input = "(add 1 2 3 4 5 6)";
+        let result = sexp(input).unwrap().1.eval(Default::default());
+        assert_eq!(result, Some(Value::Number(21)));
+    }
 }
