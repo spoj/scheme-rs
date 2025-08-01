@@ -89,12 +89,6 @@ impl Atom {
             Atom::Symbol(n) => Some(n),
         }
     }
-    fn as_number(&self) -> Option<isize> {
-        match self {
-            Atom::Number(n) => Some(*n),
-            Atom::Symbol(_) => None,
-        }
-    }
 }
 
 #[allow(unused)]
