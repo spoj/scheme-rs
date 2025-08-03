@@ -116,6 +116,18 @@ impl Sexp {
     }
 }
 
+fn all_same<I, J>(input: I) -> bool
+where
+    I: IntoIterator<Item = J>,
+    J: PartialEq,
+{
+    let mut iter = input.into_iter();
+    match iter.next() {
+        Some(item) => iter.all(|next| next == item),
+        None => true,
+    }
+}
+
 #[allow(unused)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Atom {
@@ -150,6 +162,8 @@ impl Value {
 
 #[cfg(test)]
 mod test {
+    use crate::all_same;
+
     use super::*;
     #[test]
     fn test_simple_add() {
@@ -178,5 +192,24 @@ mod test {
         let input = "((lambda (a) (add a a)) 7)";
         let result = sexp(input).unwrap().1.eval(&Default::default());
         assert_eq!(result, Some(Value::Number(14)));
+    }
+    #[test]
+    fn test_lambda2() {
+        let input = "((lambda (f x) (f (f x))) (lambda (a) (add a a)) 3)";
+        let result = sexp(input).unwrap().1.eval(&Default::default());
+        assert_eq!(result, Some(Value::Number(12)));
+    }
+    #[test]
+    fn test_all_same() {
+        let input: Vec<usize> = vec![];
+        assert!(all_same(input));
+        let input: Vec<usize> = vec![1];
+        assert!(all_same(input));
+        let input: Vec<usize> = vec![1,1];
+        assert!(all_same(input));
+        let input: Vec<usize> = vec![1,2];
+        assert!(!all_same(input));
+        let input: Vec<usize> = vec![1,1,2];
+        assert!(!all_same(input));
     }
 }
