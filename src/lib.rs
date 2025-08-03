@@ -81,6 +81,23 @@ impl Sexp {
                     .first()
                     .and_then(|s| s.as_atom())
                     .and_then(|a| a.as_atom_str())
+                    == Some("equal") =>
+            {
+                let x: Option<Vec<isize>> = sexps[1..]
+                    .iter()
+                    .map(|s| s.eval(env).and_then(|v| v.as_number()))
+                    .collect();
+                if all_same(x?) {
+                    Some(Value::Number(1))
+                } else {
+                    Some(Value::Number(0))
+                }
+            }
+            Sexp::List(sexps)
+                if sexps
+                    .first()
+                    .and_then(|s| s.as_atom())
+                    .and_then(|a| a.as_atom_str())
                     == Some("lambda") =>
             {
                 let names: Option<Vec<String>> = sexps[1].as_list().and_then(|inner_sexps| {
@@ -200,16 +217,52 @@ mod test {
         assert_eq!(result, Some(Value::Number(12)));
     }
     #[test]
+    fn test_eq1() {
+        let input = "(equal)";
+        let result = sexp(input).unwrap().1.eval(&Default::default());
+        assert_eq!(result, Some(Value::Number(1)));
+    }
+    #[test]
+    fn test_eq2() {
+        let input = "(equal 2)";
+        let result = sexp(input).unwrap().1.eval(&Default::default());
+        assert_eq!(result, Some(Value::Number(1)));
+    }
+    #[test]
+    fn test_eq3() {
+        let input = "(equal 2 3)";
+        let result = sexp(input).unwrap().1.eval(&Default::default());
+        assert_eq!(result, Some(Value::Number(0)));
+    }
+    #[test]
+    fn test_eq4() {
+        let input = "(equal 2 2)";
+        let result = sexp(input).unwrap().1.eval(&Default::default());
+        assert_eq!(result, Some(Value::Number(1)));
+    }
+    #[test]
+    fn test_eq5() {
+        let input = "(equal 2 2 2 2)";
+        let result = sexp(input).unwrap().1.eval(&Default::default());
+        assert_eq!(result, Some(Value::Number(1)));
+    }
+    #[test]
+    fn test_eq6() {
+        let input = "(equal 2 2 2 2 1)";
+        let result = sexp(input).unwrap().1.eval(&Default::default());
+        assert_eq!(result, Some(Value::Number(0)));
+    }
+    #[test]
     fn test_all_same() {
         let input: Vec<usize> = vec![];
         assert!(all_same(input));
         let input: Vec<usize> = vec![1];
         assert!(all_same(input));
-        let input: Vec<usize> = vec![1,1];
+        let input: Vec<usize> = vec![1, 1];
         assert!(all_same(input));
-        let input: Vec<usize> = vec![1,2];
+        let input: Vec<usize> = vec![1, 2];
         assert!(!all_same(input));
-        let input: Vec<usize> = vec![1,1,2];
+        let input: Vec<usize> = vec![1, 1, 2];
         assert!(!all_same(input));
     }
 }
