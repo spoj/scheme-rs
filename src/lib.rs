@@ -36,7 +36,7 @@ fn atom(input: &str) -> IResult<&str, Atom> {
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Sexp {
     Atom(Atom),
     List(Vec<Sexp>),
@@ -47,6 +47,12 @@ impl Sexp {
         match self {
             Sexp::Atom(atom) => Some(atom),
             Sexp::List(_) => None,
+        }
+    }
+    fn as_list(&self) -> Option<Vec<Sexp>> {
+        match self {
+            Sexp::Atom(_) => None,
+            Sexp::List(v) => Some(v.clone()),
         }
     }
 }
@@ -70,13 +76,48 @@ impl Sexp {
                     .sum();
                 Some(Value::Number(res))
             }
+            Sexp::List(sexps)
+                if sexps
+                    .first()
+                    .and_then(|s| s.as_atom())
+                    .and_then(|a| a.as_atom_str())
+                    == Some("lambda") =>
+            {
+                let names: Option<Vec<String>> = sexps[1].as_list().and_then(|inner_sexps| {
+                    inner_sexps
+                        .into_iter()
+                        .map(|s| {
+                            s.as_atom()
+                                .and_then(|a| a.as_atom_str().map(|s| s.to_owned()))
+                        })
+                        .collect()
+                });
+                let body = sexps[2].clone();
+                Some(Value::Lambda(names?, body))
+            }
+            Sexp::List(sexps) => {
+                let head = sexps[0].eval(env)?;
+                match head {
+                    Value::Number(_) => None,
+                    Value::Lambda(names, body) => {
+                        let values: Option<Vec<_>> =
+                            sexps[1..].iter().map(|sexp| sexp.eval(env)).collect();
+                        let values = values?;
+                        let mut env_inner = env.clone();
+                        names.iter().zip(values).for_each(|(name, value)| {
+                            env_inner.insert(name.to_owned(), value);
+                        });
+                        body.eval(&env_inner)
+                    }
+                }
+            }
             _ => unreachable!(),
         }
     }
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Atom {
     Number(isize),
     Symbol(String),
@@ -95,12 +136,14 @@ impl Atom {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Number(isize),
+    Lambda(Vec<String>, Sexp),
 }
 
 impl Value {
     fn as_number(&self) -> Option<isize> {
         match self {
             Value::Number(n) => Some(*n),
+            _ => None,
         }
     }
 }
@@ -128,5 +171,12 @@ mod test {
             .1
             .eval(&HashMap::from([("a".to_owned(), Value::Number(1))]));
         assert_eq!(result, Some(Value::Number(9)));
+    }
+
+    #[test]
+    fn test_lambda() {
+        let input = "((lambda (a) (add a a)) 7)";
+        let result = sexp(input).unwrap().1.eval(&Default::default());
+        assert_eq!(result, Some(Value::Number(14)));
     }
 }
