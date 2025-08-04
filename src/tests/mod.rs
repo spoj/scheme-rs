@@ -125,8 +125,8 @@ fn test_cond4() {
     assert_eq!(result, Some(Value::Number(3)));
 }
 
-// (x x) becomes
-// (lambda (v) ((x x) v))
+// Z combinator is fixed point combinator for pass by value systems. Same as Y combinator but
+// (x x) becomes (lambda (v) ((x x) v))
 
 #[test]
 fn test_recur_parse1() {
