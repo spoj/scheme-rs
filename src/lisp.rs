@@ -23,15 +23,6 @@ pub enum Value {
 }
 
 impl Sexp {
-    fn as_list(&self) -> Option<Vec<Sexp>> {
-        match self {
-            Sexp::Atom(_) => None,
-            Sexp::List(v) => Some(v.clone()),
-        }
-    }
-}
-
-impl Sexp {
     pub fn name_of_car(&self) -> Option<&str> {
         if let Sexp::List(sexps) = self
             && let Some(Sexp::Atom(Atom::Symbol(s))) = sexps.first()
@@ -85,7 +76,7 @@ impl Sexp {
     fn built_in_cond(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
         let mut out = Some(Value::Number(0));
         for pair in cdr {
-            if let Some(pair) = pair.as_list()
+            if let Sexp::List(pair) = pair
                 && pair.len() == 2
                 && pair[0].eval(env).is_some_and(|v| v != Value::Number(0))
             {
@@ -108,18 +99,19 @@ impl Sexp {
         if cdr.len() != 2 {
             return None;
         }
-        let names: Option<Vec<String>> = cdr[0].as_list().and_then(|inner_sexps| {
-            inner_sexps
-                .into_iter()
-                .map(|s| {
-                    if let Sexp::Atom(Atom::Symbol(s)) = s {
-                        Some(s.to_owned())
-                    } else {
-                        None
-                    }
-                })
-                .collect()
-        });
+        let Sexp::List(inner_sexps) = &cdr[0] else {
+            return None;
+        };
+        let names: Option<Vec<String>> = inner_sexps
+            .iter()
+            .map(|s| {
+                if let Sexp::Atom(Atom::Symbol(s)) = s {
+                    Some(s.to_owned())
+                } else {
+                    None
+                }
+            })
+            .collect();
         let body = cdr[1].clone();
         let captures = env.clone();
         Some(Value::Lambda(names?, captures, body))
