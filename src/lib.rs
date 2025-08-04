@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env};
+use std::{collections::HashMap};
 pub mod parse;
 
 #[cfg(test)]
@@ -76,6 +76,20 @@ impl Sexp {
             .sum();
         Some(Value::Number(res))
     }
+    fn build_in_car(cdr: &[Sexp], env: &HashMap<String, Value>) -> Option<Value> {
+        if let Some(Value::List(v)) = cdr.first().and_then(|s| s.eval(env))
+            && let Some(car) = v.first().cloned()
+        {
+            return Some(car);
+        }
+        None
+    }
+    fn build_in_cdr(cdr: &[Sexp], env: &HashMap<String, Value>) -> Option<Value> {
+        if let Some(Value::List(v)) = cdr.first().and_then(|s| s.eval(env)) {
+            return Some(Value::List(v[1..].to_owned()));
+        }
+        None
+    }
     fn built_in_list(cdr: &[Sexp], env: &HashMap<String, Value>) -> Option<Value> {
         cdr.iter()
             .map(|x| x.eval(env))
@@ -135,6 +149,8 @@ impl Sexp {
                 // built-in functions and forms
                 Some("add") => Self::built_in_add(&sexps[1..], env),
                 Some("list") => Self::built_in_list(&sexps[1..], env),
+                Some("car") => Self::build_in_car(&sexps[1..], env),
+                Some("cdr") => Self::build_in_cdr(&sexps[1..], env),
                 Some("cond") => Self::built_in_cond(&sexps[1..], env),
                 Some("equal") => Self::built_in_equal(&sexps[1..], env),
                 Some("lambda") => Self::built_in_lambda(&sexps[1..], env),

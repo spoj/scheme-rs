@@ -190,3 +190,20 @@ fn test_list1() {
         ]))
     );
 }
+
+#[test]
+fn test_list2() {
+    let program = "(car (list 1 2 (add 3 4)))";
+    let result = sexp(program).unwrap().1.eval(&Default::default());
+    assert_eq!(result, Some(Value::Number(1)));
+}
+
+#[test]
+fn test_list3() {
+    let program = "(cdr (list 1 2 (add 3 4)))";
+    let result = sexp(program).unwrap().1.eval(&Default::default());
+    assert_eq!(
+        result,
+        Some(Value::List(vec![Value::Number(2), Value::Number(7)]))
+    );
+}
