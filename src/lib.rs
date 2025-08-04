@@ -152,11 +152,9 @@ impl Sexp {
                         let values: Option<Vec<_>> =
                             sexps[1..].iter().map(|sexp| sexp.eval(env)).collect();
                         let values = values?;
-                        let mut env_inner = env.clone();
-                        names.iter().zip(values).for_each(|(name, value)| {
-                            env_inner.insert(name.to_owned(), value);
-                        });
-                        body.eval(&env_inner)
+                        let mut context_env = env.clone();
+                        context_env.extend(names.iter().cloned().zip(values));
+                        body.eval(&context_env)
                     }
                 }
             }
