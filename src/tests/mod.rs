@@ -1,5 +1,6 @@
-use super::*;
-use crate::{all_same, parse::sexp};
+use crate::lisp::*;
+use crate::parse::*;
+use std::collections::HashMap;
 #[test]
 fn test_simple_add() {
     let input = "(add 1 2 3 4 5 6)";

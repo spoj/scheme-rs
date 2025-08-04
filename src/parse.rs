@@ -1,3 +1,4 @@
+use crate::lisp::{Atom, Sexp};
 use nom::Parser;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
@@ -7,8 +8,6 @@ use nom::combinator::verify;
 use nom::multi::separated_list0;
 use nom::sequence::delimited;
 use nom::{IResult, character::complete::isize};
-
-use crate::{Atom, Sexp};
 
 // Parsing
 fn number(input: &str) -> IResult<&str, isize> {
