@@ -289,9 +289,38 @@ fn test_recur_def2() {
 fn test_recur_def3() {
     let statement1 = "(define mult
             (lambda (a b) (cond ((equal a 0) 0) ((equal a 1) b) (1 (add b (mult (add a -1) b))))))";
-    let statement2 = "(define fact (lambda (n) (cond ((equal n 0) 1) (1 (mult n (fact (add n -1)))))))";
+    let statement2 =
+        "(define fact (lambda (n) (cond ((equal n 0) 1) (1 (mult n (fact (add n -1)))))))";
     let statement3 = "(fact 7)";
     let program_repr = format!("{statement1} {statement2} {statement3}");
     let res = run_lisp(&program_repr);
     assert_eq!(res, Some(Value::Number(5040)));
+}
+
+#[test]
+fn test_quote1() {
+    let program_repr = "(equal (quote (a b c)) (list (quote a) (quote b) (quote c)))";
+    let res = run_lisp(program_repr);
+    assert_eq!(res, Some(Value::Number(1)));
+}
+
+#[test]
+fn test_quote2() {
+    let program_repr = "(equal (quote (a b c)) (list (quote a) (quote b) (quote 1)))";
+    let res = run_lisp(program_repr);
+    assert_eq!(res, Some(Value::Number(0)));
+}
+
+#[test]
+fn test_quote3() {
+    let program_repr = "(equal (quote (a b c)) (list (quote a) (quote b)))";
+    let res = run_lisp(program_repr);
+    assert_eq!(res, Some(Value::Number(0)));
+}
+
+#[test]
+fn test_quote4() {
+    let program_repr = "(equal (quote (1 2 c)) (list 1 2 (quote c)))";
+    let res = run_lisp(program_repr);
+    assert_eq!(res, Some(Value::Number(1)));
 }

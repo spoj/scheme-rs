@@ -17,6 +17,7 @@ pub enum Value {
     Number(isize),
     List(Vec<Value>),
     Lambda(Vec<String>, HashMap<String, Value>, Sexp),
+    Symbol(String),
 }
 
 impl Sexp {
@@ -91,6 +92,18 @@ impl Sexp {
             Some(Value::Number(0))
         }
     }
+    fn built_in_quote(cdr: &[Sexp]) -> Option<Value> {
+        fn quote(sexp: &Sexp) -> Option<Value> {
+            Some(match sexp {
+                Sexp::Atom(Atom::Number(n)) => Value::Number(*n),
+                Sexp::Atom(Atom::Symbol(n)) => Value::Symbol(n.to_owned()),
+                Sexp::List(sexps) => {
+                    Value::List(sexps.iter().map(quote).collect::<Option<Vec<Value>>>()?)
+                }
+            })
+        }
+        cdr.first().and_then(quote)
+    }
 
     fn built_in_lambda(cdr: &[Sexp], env: &HashMap<String, Value>) -> Option<Value> {
         if cdr.len() != 2 {
@@ -142,6 +155,7 @@ impl Sexp {
                 Some("equal") => Self::built_in_equal(&sexps[1..], env),
                 Some("lambda") => Self::built_in_lambda(&sexps[1..], env),
                 Some("define") => Self::built_in_define(&sexps[1..], env),
+                Some("quote") => Self::built_in_quote(&sexps[1..]),
                 // call by value otherwise
                 _ => {
                     let head = sexps[0].eval(env)?;
