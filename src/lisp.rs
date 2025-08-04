@@ -1,20 +1,17 @@
 use std::collections::HashMap;
 
-#[allow(unused)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Sexp {
     Atom(Atom),
     List(Vec<Sexp>),
 }
 
-#[allow(unused)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Atom {
     Number(isize),
     Symbol(String),
 }
 
-#[allow(unused)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Number(isize),
