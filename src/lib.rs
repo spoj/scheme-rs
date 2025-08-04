@@ -7,6 +7,6 @@ mod tests;
 
 pub fn run_lisp(program: &str) -> Option<Value> {
     let (_, sexp) = sexp(program).ok()?;
-    let env = Default::default();
-    sexp.eval(&env)
+    let mut env = Default::default();
+    sexp.eval(&mut env)
 }

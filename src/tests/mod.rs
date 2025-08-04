@@ -16,7 +16,7 @@ fn test_env() {
     let result = sexp(input)
         .unwrap()
         .1
-        .eval(&HashMap::from([("a".to_owned(), Value::Number(1))]));
+        .eval(&mut HashMap::from([("a".to_owned(), Value::Number(1))]));
     assert_eq!(result, Some(Value::Number(9)));
 }
 
