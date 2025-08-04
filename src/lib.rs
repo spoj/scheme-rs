@@ -66,6 +66,8 @@ impl Sexp {
             Sexp::Atom(Atom::Number(n)) => Some(Value::Number(*n)),
             Sexp::Atom(Atom::Symbol(n)) => env.get(n).cloned(),
             Sexp::List(sexps) if sexps.is_empty() => None,
+
+            // built-in `add`
             Sexp::List(sexps)
                 if sexps
                     .first()
@@ -79,6 +81,8 @@ impl Sexp {
                     .sum();
                 Some(Value::Number(res))
             }
+
+            // built-in `equal`
             Sexp::List(sexps)
                 if sexps
                     .first()
@@ -96,6 +100,8 @@ impl Sexp {
                     Some(Value::Number(0))
                 }
             }
+
+            // built-in `lambda`
             Sexp::List(sexps)
                 if sexps
                     .first()
@@ -115,6 +121,8 @@ impl Sexp {
                 let body = sexps[2].clone();
                 Some(Value::Lambda(names?, body))
             }
+
+            // call by value for (f a b c). f has to be a lambda value.
             Sexp::List(sexps) => {
                 let head = sexps[0].eval(env)?;
                 match head {
