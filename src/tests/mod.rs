@@ -1,5 +1,5 @@
 use super::*;
-use crate::all_same;
+use crate::{all_same, parse::sexp};
 #[test]
 fn test_simple_add() {
     let input = "(add 1 2 3 4 5 6)";
@@ -129,21 +129,21 @@ fn test_cond4() {
 // (lambda (v) ((x x) v))
 
 #[test]
-fn test_recur() {
+fn test_recur_parse1() {
     let ycomb = "(lambda(f)((lambda (x) (f (lambda (v) ((x x) v)))) (lambda (x) (f (lambda (v) ((x x) v))))))";
     let result = sexp(ycomb).unwrap().1.eval(&Default::default());
     assert!(result.is_some());
 }
 
 #[test]
-fn test_recur2() {
+fn test_recur_parse2() {
     let fib = "(lambda (f) (lambda (n) (cond ((equal n 0) (1)) ((equal n 1) (1)) (1 (add (f (add n -1)) (f (add n -2)))))))";
     let result = sexp(fib).unwrap().1.eval(&Default::default());
     assert!(result.is_some());
 }
 
 #[test]
-fn test_recur3() {
+fn test_recur_fib() {
     let ycomb = "(lambda(f)((lambda (x) (f (lambda (v) ((x x) v)))) (lambda (x) (f (lambda (v) ((x x) v))))))";
     let fib = "(lambda (f) (lambda (n) (cond ((equal n 0) 1) ((equal n 1) 1) (1 (add (f (add n -1)) (f (add n -2)))))))";
     // let fib = "(lambda (f) (lambda (n) (cond ((equal n 0) 1) ((equal n 1) 1) (1 (f 0)))))";
@@ -159,17 +159,20 @@ fn test_recur3() {
     let program = format!("(({} {}) {})", ycomb, fib, 2);
     let result = sexp(&program).unwrap().1.eval(&Default::default());
     assert_eq!(result, Some(Value::Number(2)));
+
     let program = format!("(({} {}) {})", ycomb, fib, 3);
     let result = sexp(&program).unwrap().1.eval(&Default::default());
     assert_eq!(result, Some(Value::Number(3)));
+    
     let program = format!("(({} {}) {})", ycomb, fib, 4);
     let result = sexp(&program).unwrap().1.eval(&Default::default());
     assert_eq!(result, Some(Value::Number(5)));
+    
     let program = format!("(({} {}) {})", ycomb, fib, 5);
     let result = sexp(&program).unwrap().1.eval(&Default::default());
     assert_eq!(result, Some(Value::Number(8)));
+    
     let program = format!("(({} {}) {})", ycomb, fib, 6);
     let result = sexp(&program).unwrap().1.eval(&Default::default());
     assert_eq!(result, Some(Value::Number(13)));
-
 }

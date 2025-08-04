@@ -1,48 +1,46 @@
 use std::collections::HashMap;
-
-use nom::Parser;
-use nom::branch::alt;
-use nom::bytes::complete::tag;
-use nom::character::complete::{alphanumeric1, space0};
-use nom::combinator::map;
-use nom::combinator::verify;
-use nom::multi::separated_list0;
-use nom::sequence::delimited;
-use nom::{IResult, character::complete::isize};
+pub mod parse;
 
 #[cfg(test)]
 mod tests;
-
-fn number(input: &str) -> IResult<&str, isize> {
-    isize.parse(input)
-}
-
-fn symbol(input: &str) -> IResult<&str, &str> {
-    verify(alphanumeric1, |s: &str| {
-        s.chars().next().is_some_and(|c| c.is_alphabetic())
-    })
-    .parse(input)
-}
-pub fn sexp(input: &str) -> IResult<&str, Sexp> {
-    alt((map(atom, Sexp::Atom), map(list, Sexp::List))).parse(input)
-}
-
-fn list(input: &str) -> IResult<&str, Vec<Sexp>> {
-    delimited(tag("("), separated_list0(space0, sexp), tag(")")).parse(input)
-}
-fn atom(input: &str) -> IResult<&str, Atom> {
-    alt((
-        map(number, Atom::Number),
-        map(symbol, |n| Atom::Symbol(n.to_string())),
-    ))
-    .parse(input)
-}
 
 #[allow(unused)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Sexp {
     Atom(Atom),
     List(Vec<Sexp>),
+}
+
+#[allow(unused)]
+#[derive(Debug, Clone, PartialEq)]
+pub enum Atom {
+    Number(isize),
+    Symbol(String),
+}
+
+impl Atom {
+    fn as_atom_str(&self) -> Option<&str> {
+        match self {
+            Atom::Number(_) => None,
+            Atom::Symbol(n) => Some(n),
+        }
+    }
+}
+
+#[allow(unused)]
+#[derive(Debug, Clone, PartialEq)]
+pub enum Value {
+    Number(isize),
+    Lambda(Vec<String>, HashMap<String, Value>, Sexp),
+}
+
+impl Value {
+    fn as_number(&self) -> Option<isize> {
+        match self {
+            Value::Number(n) => Some(*n),
+            _ => None,
+        }
+    }
 }
 
 impl Sexp {
@@ -174,37 +172,5 @@ where
     match iter.next() {
         Some(item) => iter.all(|next| next == item),
         None => true,
-    }
-}
-
-#[allow(unused)]
-#[derive(Debug, Clone, PartialEq)]
-pub enum Atom {
-    Number(isize),
-    Symbol(String),
-}
-
-impl Atom {
-    fn as_atom_str(&self) -> Option<&str> {
-        match self {
-            Atom::Number(_) => None,
-            Atom::Symbol(n) => Some(n),
-        }
-    }
-}
-
-#[allow(unused)]
-#[derive(Debug, Clone, PartialEq)]
-pub enum Value {
-    Number(isize),
-    Lambda(Vec<String>, HashMap<String, Value>, Sexp),
-}
-
-impl Value {
-    fn as_number(&self) -> Option<isize> {
-        match self {
-            Value::Number(n) => Some(*n),
-            _ => None,
-        }
     }
 }
