@@ -1,4 +1,4 @@
-use std::{collections::HashMap};
+use std::collections::HashMap;
 pub mod parse;
 
 #[cfg(test)]
@@ -18,15 +18,6 @@ pub enum Atom {
     Symbol(String),
 }
 
-impl Atom {
-    fn as_atom_str(&self) -> Option<&str> {
-        match self {
-            Atom::Number(_) => None,
-            Atom::Symbol(n) => Some(n),
-        }
-    }
-}
-
 #[allow(unused)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -35,22 +26,7 @@ pub enum Value {
     Lambda(Vec<String>, HashMap<String, Value>, Sexp),
 }
 
-impl Value {
-    fn as_number(&self) -> Option<isize> {
-        match self {
-            Value::Number(n) => Some(*n),
-            _ => None,
-        }
-    }
-}
-
 impl Sexp {
-    fn as_atom(&self) -> Option<&Atom> {
-        match self {
-            Sexp::Atom(atom) => Some(atom),
-            Sexp::List(_) => None,
-        }
-    }
     fn as_list(&self) -> Option<Vec<Sexp>> {
         match self {
             Sexp::Atom(_) => None,
@@ -72,7 +48,13 @@ impl Sexp {
     fn built_in_add(cdr: &[Sexp], env: &HashMap<String, Value>) -> Option<Value> {
         let res: isize = cdr
             .iter()
-            .flat_map(|s| s.eval(env).and_then(|a| a.as_number()))
+            .flat_map(|s| {
+                if let Some(Value::Number(n)) = s.eval(env) {
+                    Some(n)
+                } else {
+                    None
+                }
+            })
             .sum();
         Some(Value::Number(res))
     }
@@ -118,10 +100,7 @@ impl Sexp {
         out
     }
     fn built_in_equal(cdr: &[Sexp], env: &HashMap<String, Value>) -> Option<Value> {
-        let x: Option<Vec<isize>> = cdr
-            .iter()
-            .map(|s| s.eval(env).and_then(|v| v.as_number()))
-            .collect();
+        let x: Option<Vec<Value>> = cdr.iter().map(|s| s.eval(env)).collect();
         if all_same(x?) {
             Some(Value::Number(1))
         } else {
@@ -137,8 +116,11 @@ impl Sexp {
             inner_sexps
                 .into_iter()
                 .map(|s| {
-                    s.as_atom()
-                        .and_then(|a| a.as_atom_str().map(|s| s.to_owned()))
+                    if let Sexp::Atom(Atom::Symbol(s)) = s {
+                        Some(s.to_owned())
+                    } else {
+                        None
+                    }
                 })
                 .collect()
         });
