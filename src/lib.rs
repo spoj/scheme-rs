@@ -1,12 +1,13 @@
-use crate::{lisp::Value, parse::sexp};
+use crate::{lisp::Value, parse::program};
 pub mod lisp;
 pub mod parse;
 
 #[cfg(test)]
 mod tests;
 
-pub fn run_lisp(program: &str) -> Option<Value> {
-    let (_, sexp) = sexp(program).ok()?;
+pub fn run_lisp(repr: &str) -> Option<Value> {
     let mut env = Default::default();
-    sexp.eval(&mut env)
+    let (_, sexps) = program(repr).ok()?;
+    let x: Vec<_> = sexps.into_iter().map(|s| s.eval(&mut env)).collect();
+    x.last().cloned().flatten()
 }

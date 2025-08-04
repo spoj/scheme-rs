@@ -5,7 +5,7 @@ use nom::bytes::complete::tag;
 use nom::character::complete::{alphanumeric1, multispace0};
 use nom::combinator::map;
 use nom::combinator::verify;
-use nom::multi::separated_list0;
+use nom::multi::many0;
 use nom::sequence::delimited;
 use nom::{IResult, character::complete::isize};
 
@@ -29,8 +29,12 @@ pub fn sexp(input: &str) -> IResult<&str, Sexp> {
     .parse(input)
 }
 
+pub fn program(input: &str) -> IResult<&str, Vec<Sexp>> {
+    many0(sexp).parse(input)
+}
+
 fn list(input: &str) -> IResult<&str, Vec<Sexp>> {
-    delimited(tag("("), separated_list0(multispace0, sexp), tag(")")).parse(input)
+    delimited(tag("("), many0(sexp), tag(")")).parse(input)
 }
 fn atom(input: &str) -> IResult<&str, Atom> {
     alt((
