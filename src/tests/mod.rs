@@ -218,3 +218,48 @@ fn test_list7() {
     let program = format!("(({ycomb} {len}) {data})");
     assert_eq!(run_lisp(&program), Some(Value::Number(3)));
 }
+
+#[test]
+fn test_define() {
+    let mut env = Default::default();
+    let (_, defa) = sexp("(define a 3)").unwrap();
+    let (_, defb) = sexp("(define b (lambda (x) (add x x)))").unwrap();
+    let (_, exp) = sexp("(b a)").unwrap();
+    defa.eval(&mut env);
+    defb.eval(&mut env);
+    assert_eq!(exp.eval(&mut env), Some(Value::Number(6)));
+}
+
+#[test]
+fn test_whole_program() {
+    let statement1 = "(define a 3)";
+    let statement2 = "(define b 4)";
+    let statement3 = "(add b a)";
+    let program_repr = format!("{statement1} {statement2} {statement3}");
+    let res = run_lisp(&program_repr);
+    assert_eq!(res, Some(Value::Number(7)));
+}
+
+#[test]
+fn test_parse_program() {
+    let program_repr = "1 2 3";
+    let (_, v) = program(program_repr).unwrap();
+    assert_eq!(
+        v,
+        vec![
+            Sexp::Atom(Atom::Number(1)),
+            Sexp::Atom(Atom::Number(2)),
+            Sexp::Atom(Atom::Number(3)),
+        ]
+    );
+}
+
+#[test]
+fn test_whole_program2() {
+    let statement1 = "(define a 3)";
+    let statement2 = "(define b (lambda (x) (add x x)))";
+    let statement3 = "(b a)";
+    let program_repr = format!("{statement1} {statement2} {statement3}");
+    let res = run_lisp(&program_repr);
+    assert_eq!(res, Some(Value::Number(6)));
+}

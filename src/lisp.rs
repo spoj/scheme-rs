@@ -124,6 +124,17 @@ impl Sexp {
         let captures = env.clone();
         Some(Value::Lambda(names?, captures, body))
     }
+    fn built_in_define(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+        if cdr.len() == 2
+            && let Self::Atom(Atom::Symbol(name)) = &cdr[0]
+            && let Some(val) = &cdr[1].eval(env)
+        {
+            println!("defining {name} to be {val:?}");
+            env.insert(name.to_owned(), val.clone())
+        } else {
+            None
+        }
+    }
 
     pub fn eval(&self, env: &mut HashMap<String, Value>) -> Option<Value> {
         match self {
@@ -141,6 +152,7 @@ impl Sexp {
                 Some("cond") => Self::built_in_cond(&sexps[1..], env),
                 Some("equal") => Self::built_in_equal(&sexps[1..], env),
                 Some("lambda") => Self::built_in_lambda(&sexps[1..], env),
+                Some("define") => Self::built_in_define(&sexps[1..], env),
                 // call by value otherwise
                 _ => {
                     let head = sexps[0].eval(env)?;
