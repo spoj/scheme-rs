@@ -140,7 +140,8 @@ impl Sexp {
                         .collect()
                 });
                 let body = sexps[2].clone();
-                Some(Value::Lambda(names?, body))
+                let captures = env.clone();
+                Some(Value::Lambda(names?, captures, body))
             }
 
             // call by value for (f a b c). f has to be a lambda value.
@@ -148,11 +149,13 @@ impl Sexp {
                 let head = sexps[0].eval(env)?;
                 match head {
                     Value::Number(_) => None,
-                    Value::Lambda(names, body) => {
+                    Value::Lambda(names, captures, body) => {
                         let values: Option<Vec<_>> =
                             sexps[1..].iter().map(|sexp| sexp.eval(env)).collect();
                         let values = values?;
                         let mut context_env = env.clone();
+
+                        context_env.extend(captures);
                         context_env.extend(names.iter().cloned().zip(values));
                         body.eval(&context_env)
                     }
@@ -195,7 +198,7 @@ impl Atom {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Number(isize),
-    Lambda(Vec<String>, Sexp),
+    Lambda(Vec<String>, HashMap<String, Value>, Sexp),
 }
 
 impl Value {
