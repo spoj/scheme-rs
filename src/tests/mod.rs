@@ -1,5 +1,5 @@
-use crate::all_same;
 use super::*;
+use crate::all_same;
 #[test]
 fn test_simple_add() {
     let input = "(add 1 2 3 4 5 6)";
@@ -71,15 +71,31 @@ fn test_eq6() {
     assert_eq!(result, Some(Value::Number(0)));
 }
 #[test]
-fn test_all_same() {
+fn test_all_same1() {
     let input: Vec<usize> = vec![];
     assert!(all_same(input));
+}
+
+#[test]
+fn test_all_same2() {
     let input: Vec<usize> = vec![1];
     assert!(all_same(input));
+}
+
+#[test]
+fn test_all_same3() {
     let input: Vec<usize> = vec![1, 1];
     assert!(all_same(input));
+}
+
+#[test]
+fn test_all_same4() {
     let input: Vec<usize> = vec![1, 2];
     assert!(!all_same(input));
+}
+
+#[test]
+fn test_all_same5() {
     let input: Vec<usize> = vec![1, 1, 2];
     assert!(!all_same(input));
 }
