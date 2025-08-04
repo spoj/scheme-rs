@@ -60,6 +60,15 @@ impl Sexp {
 }
 
 impl Sexp {
+    pub fn name_of_car(&self) -> Option<&str> {
+        if let Sexp::List(sexps) = self
+            && let Some(Sexp::Atom(Atom::Symbol(s))) = sexps.first()
+        {
+            return Some(&s[..]);
+        }
+        None
+    }
+
     pub fn eval(&self, env: &HashMap<String, Value>) -> Option<Value> {
         match self {
             Sexp::Atom(Atom::Number(n)) => Some(Value::Number(*n)),
@@ -67,13 +76,7 @@ impl Sexp {
             Sexp::List(sexps) if sexps.is_empty() => None,
 
             // built-in `add`
-            Sexp::List(sexps)
-                if sexps
-                    .first()
-                    .and_then(|s| s.as_atom())
-                    .and_then(|a| a.as_atom_str())
-                    == Some("add") =>
-            {
+            Sexp::List(sexps) if self.name_of_car() == Some("add") => {
                 let res: isize = sexps[1..]
                     .iter()
                     .flat_map(|s| s.eval(env).and_then(|a| a.as_number()))
@@ -82,28 +85,14 @@ impl Sexp {
             }
 
             // built-in `list`
-            Sexp::List(sexps)
-                if sexps
-                    .first()
-                    .and_then(|s| s.as_atom())
-                    .and_then(|a| a.as_atom_str())
-                    == Some("list") =>
-            {
-                sexps[1..]
-                    .iter()
-                    .map(|x| x.eval(env))
-                    .collect::<Option<Vec<Value>>>()
-                    .map(Value::List)
-            }
-            
+            Sexp::List(sexps) if self.name_of_car() == Some("list") => sexps[1..]
+                .iter()
+                .map(|x| x.eval(env))
+                .collect::<Option<Vec<Value>>>()
+                .map(Value::List),
+
             // built-in `cond`
-            Sexp::List(sexps)
-                if sexps
-                    .first()
-                    .and_then(|s| s.as_atom())
-                    .and_then(|a| a.as_atom_str())
-                    == Some("cond") =>
-            {
+            Sexp::List(sexps) if self.name_of_car() == Some("cond") => {
                 let mut out = Some(Value::Number(0));
                 for pair in &sexps[1..] {
                     if let Some(pair) = pair.as_list()
@@ -118,13 +107,7 @@ impl Sexp {
             }
 
             // built-in `equal`
-            Sexp::List(sexps)
-                if sexps
-                    .first()
-                    .and_then(|s| s.as_atom())
-                    .and_then(|a| a.as_atom_str())
-                    == Some("equal") =>
-            {
+            Sexp::List(sexps) if self.name_of_car() == Some("equal") => {
                 let x: Option<Vec<isize>> = sexps[1..]
                     .iter()
                     .map(|s| s.eval(env).and_then(|v| v.as_number()))
@@ -137,13 +120,7 @@ impl Sexp {
             }
 
             // built-in `lambda`
-            Sexp::List(sexps)
-                if sexps
-                    .first()
-                    .and_then(|s| s.as_atom())
-                    .and_then(|a| a.as_atom_str())
-                    == Some("lambda") =>
-            {
+            Sexp::List(sexps) if self.name_of_car() == Some("lambda") => {
                 let names: Option<Vec<String>> = sexps[1].as_list().and_then(|inner_sexps| {
                     inner_sexps
                         .into_iter()
