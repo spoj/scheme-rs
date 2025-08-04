@@ -84,6 +84,14 @@ impl Sexp {
         }
         None
     }
+    fn build_in_empty(cdr: &[Sexp], env: &HashMap<String, Value>) -> Option<Value> {
+        if let Some(Value::List(v)) = cdr.first().and_then(|s| s.eval(env))
+            && v.is_empty()
+        {
+            return Some(Value::Number(1));
+        }
+        Some(Value::Number(0))
+    }
     fn build_in_cdr(cdr: &[Sexp], env: &HashMap<String, Value>) -> Option<Value> {
         if let Some(Value::List(v)) = cdr.first().and_then(|s| s.eval(env)) {
             return Some(Value::List(v[1..].to_owned()));
@@ -151,6 +159,7 @@ impl Sexp {
                 Some("list") => Self::built_in_list(&sexps[1..], env),
                 Some("car") => Self::build_in_car(&sexps[1..], env),
                 Some("cdr") => Self::build_in_cdr(&sexps[1..], env),
+                Some("empty") => Self::build_in_empty(&sexps[1..], env),
                 Some("cond") => Self::built_in_cond(&sexps[1..], env),
                 Some("equal") => Self::built_in_equal(&sexps[1..], env),
                 Some("lambda") => Self::built_in_lambda(&sexps[1..], env),

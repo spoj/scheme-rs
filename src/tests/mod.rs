@@ -207,3 +207,25 @@ fn test_list3() {
         Some(Value::List(vec![Value::Number(2), Value::Number(7)]))
     );
 }
+
+#[test]
+fn test_list4() {
+    let program = "(empty (cdr (list 1 2 (add 3 4))))";
+    let result = sexp(program).unwrap().1.eval(&Default::default());
+    assert_eq!(result, Some(Value::Number(0)));
+}
+
+#[test]
+fn test_list5() {
+    let program = "(empty (cdr (cdr (list 1 2 (add 3 4)))))";
+    let result = sexp(program).unwrap().1.eval(&Default::default());
+    assert_eq!(result, Some(Value::Number(0)));
+}
+
+#[test]
+fn test_list6() {
+    let program = "(empty (cdr (cdr (cdr (list 1 2 (add 3 4))))))";
+    let result = sexp(program).unwrap().1.eval(&Default::default());
+    assert_eq!(result, Some(Value::Number(1)));
+}
+
