@@ -99,3 +99,28 @@ fn test_all_same5() {
     let input: Vec<usize> = vec![1, 1, 2];
     assert!(!all_same(input));
 }
+
+#[test]
+fn test_cond1() {
+    let input = "(cond (0 1) (2 3))";
+    let result = sexp(input).unwrap().1.eval(&Default::default());
+    assert_eq!(result, Some(Value::Number(3)));
+}
+#[test]
+fn test_cond2() {
+    let input = "(cond (1 1) (2 3))";
+    let result = sexp(input).unwrap().1.eval(&Default::default());
+    assert_eq!(result, Some(Value::Number(1)));
+}
+#[test]
+fn test_cond3() {
+    let input = "(cond (0 1) (0 3))";
+    let result = sexp(input).unwrap().1.eval(&Default::default());
+    assert_eq!(result, Some(Value::Number(0)));
+}
+#[test]
+fn test_cond4() {
+    let input = "(cond ((equal 1 2) 1) ((equal 4 4) 3))";
+    let result = sexp(input).unwrap().1.eval(&Default::default());
+    assert_eq!(result, Some(Value::Number(3)));
+}

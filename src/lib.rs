@@ -82,6 +82,27 @@ impl Sexp {
                 Some(Value::Number(res))
             }
 
+            // built-in `cond`
+            Sexp::List(sexps)
+                if sexps
+                    .first()
+                    .and_then(|s| s.as_atom())
+                    .and_then(|a| a.as_atom_str())
+                    == Some("cond") =>
+            {
+                let mut out = Some(Value::Number(0));
+                for pair in &sexps[1..] {
+                    if let Some(pair) = pair.as_list()
+                        && pair.len() == 2
+                        && pair[0].eval(env).is_some_and(|v| v != Value::Number(0))
+                    {
+                        out = pair[1].eval(env);
+                        break;
+                    }
+                }
+                out
+            }
+
             // built-in `equal`
             Sexp::List(sexps)
                 if sexps
