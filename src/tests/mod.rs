@@ -163,16 +163,30 @@ fn test_recur_fib() {
     let program = format!("(({} {}) {})", ycomb, fib, 3);
     let result = sexp(&program).unwrap().1.eval(&Default::default());
     assert_eq!(result, Some(Value::Number(3)));
-    
+
     let program = format!("(({} {}) {})", ycomb, fib, 4);
     let result = sexp(&program).unwrap().1.eval(&Default::default());
     assert_eq!(result, Some(Value::Number(5)));
-    
+
     let program = format!("(({} {}) {})", ycomb, fib, 5);
     let result = sexp(&program).unwrap().1.eval(&Default::default());
     assert_eq!(result, Some(Value::Number(8)));
-    
+
     let program = format!("(({} {}) {})", ycomb, fib, 6);
     let result = sexp(&program).unwrap().1.eval(&Default::default());
     assert_eq!(result, Some(Value::Number(13)));
+}
+
+#[test]
+fn test_list1() {
+    let program = "(list 1 2 (add 3 4))";
+    let result = sexp(program).unwrap().1.eval(&Default::default());
+    assert_eq!(
+        result,
+        Some(Value::List(vec![
+            Value::Number(1),
+            Value::Number(2),
+            Value::Number(7)
+        ]))
+    );
 }

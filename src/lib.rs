@@ -31,6 +31,7 @@ impl Atom {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Number(isize),
+    List(Vec<Value>),
     Lambda(Vec<String>, HashMap<String, Value>, Sexp),
 }
 
@@ -80,6 +81,21 @@ impl Sexp {
                 Some(Value::Number(res))
             }
 
+            // built-in `list`
+            Sexp::List(sexps)
+                if sexps
+                    .first()
+                    .and_then(|s| s.as_atom())
+                    .and_then(|a| a.as_atom_str())
+                    == Some("list") =>
+            {
+                sexps[1..]
+                    .iter()
+                    .map(|x| x.eval(env))
+                    .collect::<Option<Vec<Value>>>()
+                    .map(Value::List)
+            }
+            
             // built-in `cond`
             Sexp::List(sexps)
                 if sexps
@@ -145,18 +161,17 @@ impl Sexp {
             // call by value for (f a b c). f has to be a lambda value.
             Sexp::List(sexps) => {
                 let head = sexps[0].eval(env)?;
-                match head {
-                    Value::Number(_) => None,
-                    Value::Lambda(names, captures, body) => {
-                        let values: Option<Vec<_>> =
-                            sexps[1..].iter().map(|sexp| sexp.eval(env)).collect();
-                        let values = values?;
-                        let mut context_env = env.clone();
+                if let Value::Lambda(names, captures, body) = head {
+                    let values: Option<Vec<_>> =
+                        sexps[1..].iter().map(|sexp| sexp.eval(env)).collect();
+                    let values = values?;
+                    let mut context_env = env.clone();
 
-                        context_env.extend(captures);
-                        context_env.extend(names.iter().cloned().zip(values));
-                        body.eval(&context_env)
-                    }
+                    context_env.extend(captures);
+                    context_env.extend(names.iter().cloned().zip(values));
+                    body.eval(&context_env)
+                } else {
+                    None
                 }
             }
         }
