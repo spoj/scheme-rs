@@ -1,7 +1,7 @@
 use nom::Parser;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{alphanumeric1, space0};
+use nom::character::complete::{alphanumeric1, multispace0};
 use nom::combinator::map;
 use nom::combinator::verify;
 use nom::multi::separated_list0;
@@ -22,11 +22,16 @@ fn symbol(input: &str) -> IResult<&str, &str> {
     .parse(input)
 }
 pub fn sexp(input: &str) -> IResult<&str, Sexp> {
-    alt((map(atom, Sexp::Atom), map(list, Sexp::List))).parse(input)
+    delimited(
+        multispace0,
+        alt((map(atom, Sexp::Atom), map(list, Sexp::List))),
+        multispace0,
+    )
+    .parse(input)
 }
 
 fn list(input: &str) -> IResult<&str, Vec<Sexp>> {
-    delimited(tag("("), separated_list0(space0, sexp), tag(")")).parse(input)
+    delimited(tag("("), separated_list0(multispace0, sexp), tag(")")).parse(input)
 }
 fn atom(input: &str) -> IResult<&str, Atom> {
     alt((
