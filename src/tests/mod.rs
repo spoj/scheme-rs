@@ -229,3 +229,13 @@ fn test_list6() {
     assert_eq!(result, Some(Value::Number(1)));
 }
 
+#[test]
+fn test_list7() {
+    let ycomb = "(lambda(f)((lambda (x) (f (lambda (v) ((x x) v)))) (lambda (x) (f (lambda (v) ((x x) v))))))";
+    let len = "(lambda (f) (lambda (v)  (cond ((empty v) 0) (1 (add 1 (f (cdr v)))))))";
+    let data = "(list 1 2 (add 3 4))";
+
+    let program = format!("(({ycomb} {len}) {data})");
+    let result = sexp(&program).unwrap().1.eval(&Default::default());
+    assert_eq!(result, Some(Value::Number(3)));
+}
