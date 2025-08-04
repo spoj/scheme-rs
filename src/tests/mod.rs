@@ -263,3 +263,35 @@ fn test_whole_program2() {
     let res = run_lisp(&program_repr);
     assert_eq!(res, Some(Value::Number(6)));
 }
+
+#[test]
+fn test_recur_def1() {
+    let statement1 = "(define len 
+      (lambda (v) (cond ((empty v) 0) (1 (add 1 (len (cdr v))))))
+      )";
+    let statement2 = "(len (list 1 2 (add 3 4)))";
+    let program_repr = format!("{statement1} {statement2}");
+    let res = run_lisp(&program_repr);
+    assert_eq!(res, Some(Value::Number(3)));
+}
+
+#[test]
+fn test_recur_def2() {
+    let statement1 = "(define fib 
+        (lambda (n) (cond ((equal n 0) 0) ((equal n 1) 1) (1 (add (fib (add n -1)) (fib (add n -2)))))))";
+    let statement2 = "(fib 6)";
+    let program_repr = format!("{statement1} {statement2}");
+    let res = run_lisp(&program_repr);
+    assert_eq!(res, Some(Value::Number(8)));
+}
+
+#[test]
+fn test_recur_def3() {
+    let statement1 = "(define mult
+            (lambda (a b) (cond ((equal a 0) 0) ((equal a 1) b) (1 (add b (mult (add a -1) b))))))";
+    let statement2 = "(define fact (lambda (n) (cond ((equal n 0) 1) (1 (mult n (fact (add n -1)))))))";
+    let statement3 = "(fact 7)";
+    let program_repr = format!("{statement1} {statement2} {statement3}");
+    let res = run_lisp(&program_repr);
+    assert_eq!(res, Some(Value::Number(5040)));
+}
