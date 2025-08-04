@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use nom::Parser;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{alphanumeric1, space1};
+use nom::character::complete::{alphanumeric1, space0};
 use nom::combinator::map;
 use nom::combinator::verify;
 use nom::multi::separated_list0;
@@ -28,7 +28,7 @@ pub fn sexp(input: &str) -> IResult<&str, Sexp> {
 }
 
 fn list(input: &str) -> IResult<&str, Vec<Sexp>> {
-    delimited(tag("("), separated_list0(space1, sexp), tag(")")).parse(input)
+    delimited(tag("("), separated_list0(space0, sexp), tag(")")).parse(input)
 }
 fn atom(input: &str) -> IResult<&str, Atom> {
     alt((
