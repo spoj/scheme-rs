@@ -6,8 +6,8 @@ pub mod parse;
 mod tests;
 
 pub fn run_lisp(repr: &str) -> Option<Value> {
-    let mut env = Default::default();
+    let env = Default::default();
     let (_, sexps) = program(repr).ok()?;
-    let x: Vec<_> = sexps.into_iter().map(|s| s.eval(&mut env)).collect();
+    let x: Vec<_> = sexps.into_iter().map(|s| s.eval(&env)).collect();
     x.last().cloned().flatten()
 }

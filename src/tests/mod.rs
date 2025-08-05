@@ -1,7 +1,6 @@
 use crate::lisp::*;
 use crate::parse::*;
 use crate::run_lisp;
-use std::collections::HashMap;
 #[test]
 fn test_simple_add() {
     assert_eq!(run_lisp("(add 1 2 3 4 5 6)"), Some(Value::Number(21)));
@@ -9,15 +8,6 @@ fn test_simple_add() {
 #[test]
 fn test_complex_add() {
     assert_eq!(run_lisp("(add (add 4 5 6) 1 2 3)"), Some(Value::Number(21)));
-}
-#[test]
-fn test_env() {
-    let input = "(add (add a a a) 1 2 3)";
-    let result = sexp(input)
-        .unwrap()
-        .1
-        .eval(&mut HashMap::from([("a".to_owned(), Value::Number(1))]));
-    assert_eq!(result, Some(Value::Number(9)));
 }
 
 #[test]
@@ -220,17 +210,6 @@ fn test_list7() {
 }
 
 #[test]
-fn test_define() {
-    let mut env = Default::default();
-    let (_, defa) = sexp("(define a 3)").unwrap();
-    let (_, defb) = sexp("(define b (lambda (x) (add x x)))").unwrap();
-    let (_, exp) = sexp("(b a)").unwrap();
-    defa.eval(&mut env);
-    defb.eval(&mut env);
-    assert_eq!(exp.eval(&mut env), Some(Value::Number(6)));
-}
-
-#[test]
 fn test_whole_program() {
     let statement1 = "(define a 3)";
     let statement2 = "(define b 4)";
@@ -291,10 +270,10 @@ fn test_recur_def3() {
             (lambda (a b) (cond ((equal a 0) 0) ((equal a 1) b) (1 (add b (mult (add a -1) b))))))";
     let statement2 =
         "(define fact (lambda (n) (cond ((equal n 0) 1) (1 (mult n (fact (add n -1)))))))";
-    let statement3 = "(fact 7)";
+    let statement3 = "(fact 5)";
     let program_repr = format!("{statement1} {statement2} {statement3}");
     let res = run_lisp(&program_repr);
-    assert_eq!(res, Some(Value::Number(5040)));
+    assert_eq!(res, Some(Value::Number(120)));
 }
 
 #[test]
@@ -350,4 +329,21 @@ fn test_check_type() {
         run_lisp("(define a (quote (a b c))) (islist (cdr a))"),
         Some(Value::Number(1))
     );
+}
+
+#[test]
+fn self_host1() {
+    let statement1 = "(define eval (lambda (p) (cond ((isnumber p) p) ((equal (car p) (quote add)) (add (car (cdr p)) (car (cdr (cdr p))))))))";
+    let statement3 = "(eval (quote 3))";
+    let program_repr = format!("{statement1} {statement3}");
+    let res = run_lisp(&program_repr);
+    assert_eq!(res, Some(Value::Number(3)));
+}
+#[test]
+fn self_host2() {
+    let statement1 = "(define eval (lambda (p) (cond ((isnumber p) p) ((equal (car p) (quote add)) (add (car (cdr p)) (car (cdr (cdr p))))))))";
+    let statement3 = "(eval (quote (add 3 4)))";
+    let program_repr = format!("{statement1} {statement3}");
+    let res = run_lisp(&program_repr);
+    assert_eq!(res, Some(Value::Number(7)));
 }

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Sexp {
@@ -16,8 +16,41 @@ pub enum Atom {
 pub enum Value {
     Number(isize),
     List(Vec<Value>),
-    Lambda(Vec<String>, HashMap<String, Value>, Sexp),
+    Lambda(Vec<String>, Rc<Env>, Sexp),
     Symbol(String),
+}
+
+#[derive(Default, Debug, PartialEq, Clone)]
+pub struct Env {
+    bindings: RefCell<HashMap<String, Value>>,
+    parent: Option<Rc<Env>>,
+}
+
+impl Env {
+    fn enclosed(parent: &Rc<Env>) -> Self {
+        let parent = Some(Rc::clone(parent));
+        let bindings = Default::default();
+        Env { bindings, parent }
+    }
+    fn lookup(&self, name: &str) -> Option<Value> {
+        self.bindings.borrow().get(name).cloned().or_else(|| {
+            if let Some(ref parent) = self.parent {
+                parent.lookup(name)
+            } else {
+                None
+            }
+        })
+    }
+    fn def_local(&self, name: String, value: Value) {
+        self.bindings.borrow_mut().insert(name, value);
+    }
+    fn def_global(&self, name: String, value: Value) {
+        if let Some(parent) = self.parent.as_ref() {
+            parent.def_global(name, value);
+        } else {
+            self.def_local(name, value);
+        }
+    }
 }
 
 impl Sexp {
@@ -30,7 +63,7 @@ impl Sexp {
         None
     }
 
-    fn built_in_add(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+    fn built_in_add(cdr: &[Sexp], env: &Rc<Env>) -> Option<Value> {
         let res: isize = cdr
             .iter()
             .flat_map(|s| {
@@ -43,7 +76,7 @@ impl Sexp {
             .sum();
         Some(Value::Number(res))
     }
-    fn build_in_car(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+    fn build_in_car(cdr: &[Sexp], env: &Rc<Env>) -> Option<Value> {
         if let Some(Value::List(v)) = cdr.first().and_then(|s| s.eval(env))
             && let Some(car) = v.first().cloned()
         {
@@ -51,7 +84,7 @@ impl Sexp {
         }
         None
     }
-    fn build_in_empty(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+    fn build_in_empty(cdr: &[Sexp], env: &Rc<Env>) -> Option<Value> {
         if let Some(Value::List(v)) = cdr.first().and_then(|s| s.eval(env))
             && v.is_empty()
         {
@@ -59,19 +92,19 @@ impl Sexp {
         }
         Some(Value::Number(0))
     }
-    fn build_in_cdr(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+    fn build_in_cdr(cdr: &[Sexp], env: &Rc<Env>) -> Option<Value> {
         if let Some(Value::List(v)) = cdr.first().and_then(|s| s.eval(env)) {
             return Some(Value::List(v[1..].to_owned()));
         }
         None
     }
-    fn built_in_list(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+    fn built_in_list(cdr: &[Sexp], env: &Rc<Env>) -> Option<Value> {
         cdr.iter()
             .map(|x| x.eval(env))
             .collect::<Option<Vec<Value>>>()
             .map(Value::List)
     }
-    fn built_in_cond(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+    fn built_in_cond(cdr: &[Sexp], env: &Rc<Env>) -> Option<Value> {
         let mut out = Some(Value::Number(0));
         for pair in cdr {
             if let Sexp::List(pair) = pair
@@ -84,7 +117,7 @@ impl Sexp {
         }
         out
     }
-    fn built_in_equal(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+    fn built_in_equal(cdr: &[Sexp], env: &Rc<Env>) -> Option<Value> {
         let x: Option<Vec<Value>> = cdr.iter().map(|s| s.eval(env)).collect();
         if all_same(x?) {
             Some(Value::Number(1))
@@ -105,7 +138,7 @@ impl Sexp {
         cdr.first().and_then(quote)
     }
 
-    fn built_in_lambda(cdr: &[Sexp], env: &HashMap<String, Value>) -> Option<Value> {
+    fn built_in_lambda(cdr: &[Sexp], env: &Rc<Env>) -> Option<Value> {
         if cdr.len() != 2 {
             return None;
         }
@@ -123,35 +156,33 @@ impl Sexp {
             })
             .collect();
         let body = cdr[1].clone();
-        let captures = env.clone();
+        let captures = Rc::clone(env);
         Some(Value::Lambda(names?, captures, body))
     }
-    fn built_in_define(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+    fn built_in_define(cdr: &[Sexp], env: &Rc<Env>) -> Option<Value> {
         if cdr.len() == 2
             && let Self::Atom(Atom::Symbol(name)) = &cdr[0]
             && let Some(val) = &cdr[1].eval(env)
         {
-            println!("defining {name} to be {val:?}");
-            env.insert(name.to_owned(), val.clone())
-        } else {
-            None
+            env.def_global(name.to_owned(), val.clone());
         }
+        None
     }
-    fn built_in_is_symbol(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+    fn built_in_is_symbol(cdr: &[Sexp], env: &Rc<Env>) -> Option<Value> {
         if let Some(Value::Symbol(_)) = cdr.first().and_then(|x| x.eval(env)) {
             Some(Value::Number(1))
         } else {
             Some(Value::Number(0))
         }
     }
-    fn built_in_is_list(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+    fn built_in_is_list(cdr: &[Sexp], env: &Rc<Env>) -> Option<Value> {
         if let Some(Value::List(_)) = cdr.first().and_then(|x| x.eval(env)) {
             Some(Value::Number(1))
         } else {
             Some(Value::Number(0))
         }
     }
-    fn built_in_is_number(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+    fn built_in_is_number(cdr: &[Sexp], env: &Rc<Env>) -> Option<Value> {
         if let Some(Value::Number(_)) = cdr.first().and_then(|x| x.eval(env)) {
             Some(Value::Number(1))
         } else {
@@ -159,10 +190,10 @@ impl Sexp {
         }
     }
 
-    pub fn eval(&self, env: &mut HashMap<String, Value>) -> Option<Value> {
+    pub fn eval(&self, env: &Rc<Env>) -> Option<Value> {
         match self {
             Sexp::Atom(Atom::Number(n)) => Some(Value::Number(*n)),
-            Sexp::Atom(Atom::Symbol(n)) => env.get(n).cloned(),
+            Sexp::Atom(Atom::Symbol(n)) => env.lookup(n),
             Sexp::List(sexps) if sexps.is_empty() => None,
 
             Sexp::List(sexps) => match self.name_of_car() {
@@ -187,11 +218,11 @@ impl Sexp {
                         let values: Option<Vec<_>> =
                             sexps[1..].iter().map(|sexp| sexp.eval(env)).collect();
                         let values = values?;
-                        let mut context_env = env.clone();
-
-                        context_env.extend(captures);
-                        context_env.extend(names.iter().cloned().zip(values));
-                        body.eval(&mut context_env)
+                        let context_env = Env::enclosed(&captures);
+                        for (n, v) in names.iter().cloned().zip(values) {
+                            context_env.def_local(n, v);
+                        }
+                        body.eval(&Rc::new(context_env))
                     } else {
                         None
                     }
