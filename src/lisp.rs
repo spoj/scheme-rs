@@ -137,6 +137,27 @@ impl Sexp {
             None
         }
     }
+    fn built_in_is_symbol(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+        if let Some(Value::Symbol(_)) = cdr.first().and_then(|x| x.eval(env)) {
+            Some(Value::Number(1))
+        } else {
+            Some(Value::Number(0))
+        }
+    }
+    fn built_in_is_list(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+        if let Some(Value::List(_)) = cdr.first().and_then(|x| x.eval(env)) {
+            Some(Value::Number(1))
+        } else {
+            Some(Value::Number(0))
+        }
+    }
+    fn built_in_is_number(cdr: &[Sexp], env: &mut HashMap<String, Value>) -> Option<Value> {
+        if let Some(Value::Number(_)) = cdr.first().and_then(|x| x.eval(env)) {
+            Some(Value::Number(1))
+        } else {
+            Some(Value::Number(0))
+        }
+    }
 
     pub fn eval(&self, env: &mut HashMap<String, Value>) -> Option<Value> {
         match self {
@@ -156,6 +177,9 @@ impl Sexp {
                 Some("lambda") => Self::built_in_lambda(&sexps[1..], env),
                 Some("define") => Self::built_in_define(&sexps[1..], env),
                 Some("quote") => Self::built_in_quote(&sexps[1..]),
+                Some("issymbol") => Self::built_in_is_symbol(&sexps[1..], env),
+                Some("islist") => Self::built_in_is_list(&sexps[1..], env),
+                Some("isnumber") => Self::built_in_is_number(&sexps[1..], env),
                 // call by value otherwise
                 _ => {
                     let head = sexps[0].eval(env)?;

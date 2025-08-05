@@ -324,3 +324,30 @@ fn test_quote4() {
     let res = run_lisp(program_repr);
     assert_eq!(res, Some(Value::Number(1)));
 }
+#[test]
+fn test_check_type() {
+    assert_eq!(run_lisp("(islist (list 3))"), Some(Value::Number(1)));
+    assert_eq!(run_lisp("(islist 3)"), Some(Value::Number(0)));
+    assert_eq!(run_lisp("(isnumber 3)"), Some(Value::Number(1)));
+    assert_eq!(run_lisp("(isnumber 8)"), Some(Value::Number(1)));
+    assert_eq!(
+        run_lisp("(define a 3) (isnumber a)"),
+        Some(Value::Number(1))
+    );
+    assert_eq!(
+        run_lisp("(define a 3) (issymbol (quote a))"),
+        Some(Value::Number(1))
+    );
+    assert_eq!(
+        run_lisp("(define a (quote b)) (issymbol a)"),
+        Some(Value::Number(1))
+    );
+    assert_eq!(
+        run_lisp("(define a (quote (a b c))) (issymbol (car a))"),
+        Some(Value::Number(1))
+    );
+    assert_eq!(
+        run_lisp("(define a (quote (a b c))) (islist (cdr a))"),
+        Some(Value::Number(1))
+    );
+}
