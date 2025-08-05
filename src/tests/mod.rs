@@ -347,3 +347,9 @@ fn self_host2() {
     let res = run_lisp(&program_repr);
     assert_eq!(res, Some(Value::Number(7)));
 }
+#[test]
+fn self_host3() {
+    let program_repr = include_str!("self_host3.lisp");
+    let res = run_lisp(program_repr);
+    assert_eq!(res, Some(Value::Number(1)));
+}
